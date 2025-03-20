@@ -168,8 +168,8 @@ fn main() -> anyhow::Result<()> {
                             .await
                             .unwrap()
                             .unwrap();
-                        // the NAT may give us the correct port in a_1 already, so no second entry to
-                        // check
+                        // the NAT may give us the correct port in a_1 already, so no second entry
+                        // to check
                         let a_nat = a_1
                             .replace(1, |_| Some(Protocol::Tcp(30000)))
                             .filter(|a| *m_id == m_nat && *a != a_1);
@@ -177,13 +177,15 @@ fn main() -> anyhow::Result<()> {
                         m.select(|e| {
                             matches!(e, Event::PeerInfo(p, i) if p == peer && (
                                 // port_reuse unfortunately means that the NATed port is added to
-                                // listeners by GenTcp, sent via Identify, but not falsifiable because
+                                // listeners by GenTcp, sent via Identify,
+                                // but not falsifiable because
                                 // we can’t attempt to dial while the connection exists
                                 i.addresses.get(&a_1).map(|x| x.as_str()) == Some("Candidate") &&
                                 a_nat.iter().all(|a_nat| {
                                     i.addresses.get(a_nat).map(|x| x.as_str()) == Some("Dial")
                                 }))
-                                // if consumer sent identify first, then the NAT address wasn’t known
+                                // if consumer sent identify first,
+                                // then the NAT address wasn’t known
                                 // and only falsifiable listen addresses are left
                                 || i.addresses.is_empty()
                             )
@@ -197,8 +199,8 @@ fn main() -> anyhow::Result<()> {
                     m.drain();
                 }
 
-                // now disconnect the consumers so that the providers will try to dial and falsify the
-                // addresses
+                // now disconnect the consumers so that the providers will try to dial and
+                // falsify the addresses
                 for id in consumers.keys() {
                     sim.machine(*id).down();
                 }

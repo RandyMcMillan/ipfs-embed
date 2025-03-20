@@ -111,14 +111,17 @@ fn main() -> anyhow::Result<()> {
                         m.select(|e| {
                             matches!(e, Event::PeerInfo(p, i) if p == peer && (
                                 // port_reuse unfortunately means that the NATed port is added to
-                                // listeners by GenTcp, sent via Identify, but not falsifiable because
+                                // listeners by GenTcp, sent via Identify,
+                                // but not falsifiable because
                                 // we can’t attempt to dial while the connection exists
                                 i.addresses.get(&i.connections[0]).map(|s| s.as_str()) ==
                                     Some("Candidate")
-                                    // can’t check for full hashmap equality since the state where only the
+                                    // can’t check for full hashmap equality
+                                    // since the state where only the
                                     // Candidate is present may be lost to output race conditions
                                 || i.addresses.is_empty()
-                                    // if consumer sent identify first, then the NAT address wasn’t known
+                                    // if consumer sent identify first,
+                                    // then the NAT address wasn’t known
                                     // and only falsifiable listen addresses are left
                             ))
                             .then(|| ())
