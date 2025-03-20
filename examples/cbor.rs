@@ -1,6 +1,5 @@
-use std::io::Cursor;
-
 use ciborium::ser::into_writer;
+use std::io::Cursor;
 
 fn create_boxed_u8_slice(data: Vec<u8>) -> Box<[u8]> {
     data.into_boxed_slice()
@@ -15,6 +14,9 @@ fn serialize_my_vec(
 }
 
 fn main() {
+
+
+
     let my_vec = (42, "hello".to_string());
     match serialize_my_vec(&my_vec) {
         Ok(serialized_data) => {
@@ -26,34 +28,27 @@ fn main() {
             eprintln!("Serialization error: {}", e);
         }
     }
-}
 
-//fn main() {
-//
-//
-//
-//    let my_vec: Vec<u8> = vec![1, 2, 3, 4, 5];
-//    let boxed_slice: Box<[u8]> = create_boxed_u8_slice(my_vec);
-//    println!("{:?}", boxed_slice);
-//    ciborium::ser::into_writer(&my_vec, &mut
-// boxed_slice).expect("Serialization of tuple");
-//
-//    // Tuple to be serialized
-//    let tuple = ("Hello", "World");
-//
-//    // Serialize the tuple into a vector of bytes
-//    let mut vec = Vec::new();
-//    ciborium::ser::into_writer(&tuple, &mut vec).expect("Serialization of
-// tuple");
-//
-//    //print the serialized representation
-//    println!("Serialized CBOR: {:?}", vec);
-//
-//    // Deserialize the CBOR bytes back into a Rust tuple
-//    let deserialized: (String, String) = ciborium::de::from_reader(&mut
-// Cursor::new(vec))        .expect("Deserialized back into a Rust tuple");
-//
-//    // Assert equality (for demonstration, normally you'd use this
-// deserialized data)    assert_eq!(deserialized, ("Hello".to_string(),
-// "World".to_string()));    println!("Deserialized Data: {:?}", deserialized);
-//}
+    let my_vec: Vec<u8> = vec![1, 2, 3, 4, 5];
+    let boxed_slice: Box<[u8]> = create_boxed_u8_slice(my_vec);
+    println!("{:?}", boxed_slice);
+    ciborium::ser::into_writer(&my_vec, &mut boxed_slice).expect("Serialization of tuple");
+
+    // Tuple to be serialized
+    let tuple = ("Hello", "World");
+
+    // Serialize the tuple into a vector of bytes
+    let mut vec = Vec::new();
+    ciborium::ser::into_writer(&tuple, &mut vec).expect("Serialization of tuple");
+
+    //print the serialized representation
+    println!("Serialized CBOR: {:?}", vec);
+
+    // Deserialize the CBOR bytes back into a Rust tuple
+    let deserialized: (String, String) = ciborium::de::from_reader(&mut Cursor::new(vec))
+        .expect("Deserialized back into a Rust tuple");
+
+    // Assert equality (for demonstration, normally you'd use this
+    assert_eq!(deserialized, ("Hello".to_string(), "World".to_string()));
+    println!("Deserialized Data: {:?}", deserialized);
+}
