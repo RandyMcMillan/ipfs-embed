@@ -28,7 +28,7 @@ fn main() {
 
     let my_vec_u8: Vec<u8> = vec![1, 2, 3, 4, 5];
     let boxed_slice_u8: Box<[u8]> = create_boxed_u8_slice(my_vec_u8.clone());
-    println!("{:?}", boxed_slice_u8);
+    println!("boxed_slice_u8 of my_vec_u8: {:?}", boxed_slice_u8);
 
     // Corrected serialization of my_vec_u8
     let mut buffer_for_u8 = Vec::new();
@@ -39,12 +39,13 @@ fn main() {
     // Tuple to be serialized
     let tuple = ("Hello", "World");
 
+    println!("tuple = {:?}", tuple.clone());
     // Serialize the tuple into a vector of bytes
     let mut vec = Vec::new();
     ciborium::ser::into_writer(&tuple, &mut vec).expect("Serialization of tuple");
 
     // Print the serialized representation
-    println!("Serialized CBOR: {:?}", vec);
+    println!("Serialized CBOR of tuple {:?}: {:?}", tuple, vec);
 
     // Deserialize the CBOR bytes back into a Rust tuple
     let deserialized: (String, String) = ciborium::de::from_reader(&mut Cursor::new(vec))
