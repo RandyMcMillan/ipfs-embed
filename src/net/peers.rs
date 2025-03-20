@@ -797,7 +797,8 @@ impl NetworkBehaviour for AddressBook {
                 self.notify(Event::ConnectionEstablished(c.peer_id, conn));
             }
             FromSwarm::ConnectionClosed(_) => {
-                // handled via external SwarmEvent since that is the only way to get the reason
+                // handled via external SwarmEvent since that is the only way to
+                // get the reason
             }
             FromSwarm::AddressChange(a) => {
                 let old = normalize_connected_point(a.old, &self.local_peer_id, &a.peer_id);

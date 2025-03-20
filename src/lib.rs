@@ -818,10 +818,12 @@ mod tests {
             .unwrap();
 
         /*
-         * This test used to assume that calling subscribe immediately updates the local subscription
-         * while sending that subscription over the network takes some time, meaning that all participants
-         * received all Subscribed messages. With the new asynchronous NetworkCommand this is no longer
-         * true, so Subscribed messages are sometimes missed.
+         * This test used to assume that calling subscribe immediately updates the
+         * local subscription while sending that subscription over the
+         * network takes some time, meaning that all participants
+         * received all Subscribed messages. With the new asynchronous NetworkCommand
+         * this is no longer true, so Subscribed messages are sometimes
+         * missed.
          */
         for (idx, subscription) in subscriptions.iter_mut().enumerate() {
             let mut expected = stores

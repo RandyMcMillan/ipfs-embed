@@ -214,7 +214,11 @@ impl NetworkService {
                     match trust_dns_resolver::system_conf::read_system_conf() {
                         Ok((config, opts)) => Dns::custom(quic_or_tcp, config, opts).await?,
                         Err(e) => {
-                            tracing::warn!("falling back to custom DNS config, system default yielded error `${:#}`", e);
+                            tracing::warn!(
+                                "falling back to custom DNS config,
+                                system default yielded error `${:#}`",
+                                e
+                            );
                             Dns::custom(quic_or_tcp, config, opts).await?
                         }
                     }
@@ -231,7 +235,11 @@ impl NetworkService {
                     match trust_dns_resolver::system_conf::read_system_conf() {
                         Ok((config, opts)) => Dns::custom(quic_or_tcp, config, opts)?,
                         Err(e) => {
-                            tracing::warn!("falling back to custom DNS config, system default yielded error `${:#}`", e);
+                            tracing::warn!(
+                                "falling back to custom DNS config,
+                                system default yielded error `${:#}`",
+                                e
+                            );
                             Dns::custom(quic_or_tcp, config, opts)?
                         }
                     }
@@ -526,7 +534,8 @@ impl NetworkService {
         async { rx.await? }.right_future()
     }
 
-    // This cannot take `&mut self` due to trait constraints, so it needs to use the less efficient cmd_shared.
+    // This cannot take `&mut self` due to trait constraints, so it needs to use the
+    // less efficient cmd_shared.
     pub fn get(&self, cid: Cid, providers: Vec<PeerId>) -> impl Future<Output = Result<GetQuery>> {
         let (tx, rx) = oneshot::channel();
         if let Some((_, err)) = self.cmd_shared(NetworkCommand::Get(cid, providers, tx)) {
@@ -535,7 +544,8 @@ impl NetworkService {
         async { Ok(rx.await?) }.right_future()
     }
 
-    // This cannot take `&mut self` due to trait constraints, so it needs to use the less efficient cmd_shared.
+    // This cannot take `&mut self` due to trait constraints, so it needs to use the
+    // less efficient cmd_shared.
     pub fn sync(
         &self,
         cid: Cid,
