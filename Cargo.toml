@@ -67,6 +67,7 @@ features = [
 anyhow = { version = "1", features = ["backtrace"] }
 async-executor = "1.4.1"
 async-std = { version = "1.11.0", features = ["attributes"] }
+ciborium = "0.2.2"
 libipld = { version = "0.14.0", default-features = false, features = ["dag-cbor", "dag-pb", "derive"] }
 libp2p-bitswap = { version = "0.25.0", default-features = false, features = ["compat"] }
 multihash = { version = "0.16.1", default-features = false, features = ["blake3"] }
