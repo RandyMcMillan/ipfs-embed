@@ -35,9 +35,13 @@ on:
 
 name: ipfs-embed
 
+permissions:
+  contents: read
+
 jobs:
   prepare-matrix:
     runs-on: ubuntu-latest
+    permissions: {}
     outputs:
       toolchains: ${{ steps.matrix.outputs.toolchains }}
       platforms: ${{ steps.matrix.outputs.platforms }}
