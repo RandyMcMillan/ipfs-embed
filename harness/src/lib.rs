@@ -1,4 +1,5 @@
 #![cfg(target_os = "linux")]
+#![allow(dependency_on_unit_never_type_fallback)]
 
 use anyhow::{Context, Result};
 use async_std::future::TimeoutError;
