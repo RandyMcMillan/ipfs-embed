@@ -1,3 +1,5 @@
+#![allow(dependency_on_unit_never_type_fallback)]
+
 use anyhow::Result;
 use fnv::FnvHashSet;
 use ipfs_embed::{

@@ -1,3 +1,5 @@
+#![allow(dependency_on_unit_never_type_fallback)]
+
 use anyhow::Result;
 use libipld::{cbor::DagCborCodec, multihash::Code, Block, Cid, DagCbor, DefaultParams};
 use rand::RngCore;

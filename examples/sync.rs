@@ -1,3 +1,5 @@
+#![allow(dependency_on_unit_never_type_fallback)]
+
 use anyhow::Result;
 use futures::stream::StreamExt;
 use ipfs_embed::{identity::ed25519::Keypair, Config, Ipfs};
