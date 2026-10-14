@@ -1,42 +1,86 @@
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      rust:
+        description: Rust toolchain
+        type: choice
+        default: stable
+        options:
+          - stable
+          - nightly
+          - both
+      os:
+        description: Runner OS (also selects matching cross-target hosts)
+        type: choice
+        default: all
+        options:
+          - all
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+      include_cross:
+        description: Include Android and iOS cross-target builds
+        type: boolean
+        default: true
+      run_tests:
+        description: Run unit and netsim integration tests
+        type: boolean
+        default: true
+      run_lint:
+        description: Run rustfmt and Clippy
+        type: boolean
+        default: true
 
 name: ipfs-embed
 
 jobs:
+  prepare-matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      toolchains: ${{ steps.matrix.outputs.toolchains }}
+      platforms: ${{ steps.matrix.outputs.platforms }}
+    steps:
+      - name: Select toolchains and platforms
+        id: matrix
+        shell: python
+        env:
+          SELECTED_RUST: ${{ inputs.rust || 'stable' }}
+          SELECTED_OS: ${{ inputs.os || 'all' }}
+          INCLUDE_CROSS: ${{ github.event_name != 'workflow_dispatch' || inputs.include_cross }}
+        run: |
+          import json
+          import os
+
+          rust = os.environ["SELECTED_RUST"]
+          toolchains = ["stable", "nightly"] if rust == "both" else [rust]
+          platforms = [
+              {"target": "x86_64-unknown-linux-gnu", "host": "ubuntu-latest", "cross": False},
+              {"target": "x86_64-apple-darwin", "host": "macos-latest", "cross": False},
+              {"target": "x86_64-pc-windows-msvc", "host": "windows-latest", "cross": False},
+              {"target": "armv7-linux-androideabi", "host": "ubuntu-latest", "cross": True},
+              {"target": "aarch64-linux-android", "host": "ubuntu-latest", "cross": True},
+              {"target": "aarch64-apple-ios", "host": "macos-latest", "cross": True},
+          ]
+          selected_os = os.environ["SELECTED_OS"]
+          include_cross = os.environ["INCLUDE_CROSS"] == "true"
+          platforms = [
+              platform for platform in platforms
+              if (selected_os == "all" or platform["host"] == selected_os)
+              and (include_cross or not platform["cross"])
+          ]
+          with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+              output.write(f"toolchains={json.dumps(toolchains)}\n")
+              output.write(f"platforms={json.dumps(platforms)}\n")
+
   ci:
+    needs: prepare-matrix
     strategy:
       fail-fast: false
       matrix:
-        toolchain:
-          - rust: stable
-        #- rust: nightly
-        platform:
-          - target: x86_64-unknown-linux-gnu
-            host: ubuntu-latest
-            cross: false
-
-          - target: x86_64-apple-darwin
-            host: macos-latest
-            cross: false
-
-          - target: x86_64-pc-windows-msvc
-            host: windows-latest
-            cross: false
-
-          - target: armv7-linux-androideabi
-            host: ubuntu-latest
-            cross: true
-          - target: aarch64-linux-android
-            host: ubuntu-latest
-            cross: true
-
-          - target: aarch64-apple-ios
-            host: macos-latest
-            cross: true
-
-        # - target: wasm32-unknown-unknown
-        #   host: ubuntu-latest
-        #   cross: true
+        toolchain: ${{ fromJSON(needs.prepare-matrix.outputs.toolchains) }}
+        platform: ${{ fromJSON(needs.prepare-matrix.outputs.platforms) }}
     env:
       RUST_BACKTRACE: 1
       RUST_LOG: netsim_embed_machine=debug,info
@@ -58,7 +102,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ matrix.platform.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ matrix.platform.target }}-${{ matrix.toolchain }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
@@ -81,8 +125,9 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: ${{ matrix.toolchain.rust }}
+          toolchain: ${{ matrix.toolchain }}
           target: ${{ matrix.platform.target }}
+          override: true
 
       - name: Install cargo-apk
         if: contains(matrix.platform.target, 'android')
@@ -112,27 +157,33 @@ jobs:
           args: -- build --target ${{ matrix.platform.target }} -p ipfs-embed
 
       - name: Rust tests
-        if: matrix.platform.cross == false
+        if: matrix.platform.cross == false && (github.event_name != 'workflow_dispatch' || inputs.run_tests)
         uses: actions-rs/cargo@v1
         with:
           command: test
 
       - name: Build netsim integration tests
-        if: contains(matrix.platform.target, 'linux-gnu')
+        if: contains(matrix.platform.target, 'linux-gnu') && (github.event_name != 'workflow_dispatch' || inputs.run_tests)
         uses: actions-rs/cargo@v1
         with:
           command: build
           args: -p ipfs-embed-cli -p harness --release
 
       - name: Run netsim integration tests
-        if: contains(matrix.platform.target, 'linux-gnu')
+        if: contains(matrix.platform.target, 'linux-gnu') && (github.event_name != 'workflow_dispatch' || inputs.run_tests)
         uses: actions-rs/cargo@v1
         with:
           command: test
           args: --release -p harness
 
   lint-rust:
-    runs-on: ubuntu-latest
+    needs: prepare-matrix
+    if: github.event_name != 'workflow_dispatch' || inputs.run_lint
+    strategy:
+      fail-fast: false
+      matrix:
+        rust: ${{ fromJSON(needs.prepare-matrix.outputs.toolchains) }}
+    runs-on: ${{ inputs.os != 'all' && inputs.os || 'ubuntu-latest' }}
     steps:
       - name: Checkout sources
         uses: actions/checkout@v3
@@ -146,14 +197,15 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ matrix.rust }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
       - name: Install rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           profile: minimal
           components: clippy, rustfmt
+          override: true
 
       - name: Install Protoc
         uses: arduino/setup-protoc@v1
