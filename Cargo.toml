@@ -32,7 +32,7 @@ futures-timer = "3.0.2"
 ipfs-sqlite-block-store = "0.13.0"
 lazy_static = "1.4.0"
 libipld = { version = "0.14.0", default-features = false }
-libp2p-bitswap = "0.25.0"
+libp2p-bitswap = "0.25.1"
 libp2p-broadcast = "0.12.0"
 names = "0.13.0"
 parking_lot = "0.11.2"

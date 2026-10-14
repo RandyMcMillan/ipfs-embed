@@ -263,8 +263,8 @@ where
         self.network.is_bootstrapped()
     }
 
-    /// Gets the closest peer to a key. Useful for finding the `Multiaddr` of a
-    /// `PeerId`.
+    // Gets the closest peer to a key. Useful for finding the `Multiaddr` of a
+    // `PeerId`.
     // pub async fn get_closest_peers<K>(&self, key: K) -> Result<()>
     // where
     //     K: Into<BucketKey<K>> + Into<Vec<u8>> + Clone,
@@ -684,7 +684,7 @@ mod tests {
         assert_pinned!(&local1, &b1);
         assert_pinned!(&local1, &c1);
 
-        local2.alias(&x, Some(c1.cid()))?;
+        local2.alias(x, Some(c1.cid()))?;
         local2
             .sync(c1.cid(), vec![local1.local_peer_id()])
             .await?

@@ -32,8 +32,7 @@ fn main() {
 
     // Corrected serialization of my_vec_u8
     let mut buffer_for_u8 = Vec::new();
-    ciborium::ser::into_writer(&my_vec_u8, &mut buffer_for_u8)
-        .expect("Serialization of my_vec_u8");
+    ciborium::ser::into_writer(&my_vec_u8, &mut buffer_for_u8).expect("Serialization of my_vec_u8");
     println!("Serialized my_vec_u8: {:?}", buffer_for_u8); //added print
 
     // Tuple to be serialized

@@ -7,6 +7,7 @@ use libipld::{
     alias, cbor::DagCborCodec, multihash::Code, store::DefaultParams, Block, Cid, DagCbor,
 };
 use rand::RngCore;
+use std::time::Duration;
 
 const ROOT: &str = alias!(root);
 
@@ -55,7 +56,7 @@ async fn main() -> Result<()> {
 
     let mut config = Config::new("/tmp/local2".as_ref(), Keypair::generate());
     config.network.kad = None;
-    let b = Ipfs::<DefaultParams>::new(config).await?;
+    let mut b = Ipfs::<DefaultParams>::new(config).await?;
 
     println!("starting import");
     let start = std::time::Instant::now();
@@ -72,6 +73,9 @@ async fn main() -> Result<()> {
 
     let end = std::time::Instant::now();
     println!("time to import {}ms", end.duration_since(start).as_millis());
+
+    b.dial_address(a.local_peer_id(), a.listeners()[0].clone());
+    async_std::task::sleep(Duration::from_secs(2)).await;
 
     println!("starting sync");
     let start = std::time::Instant::now();

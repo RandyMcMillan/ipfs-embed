@@ -13,7 +13,7 @@ use libp2p::{
     },
     TransportError,
 };
-use std::{cell::RefCell, collections::HashMap, io::ErrorKind};
+use std::{cell::RefCell, collections::HashMap};
 use tracing_subscriber::EnvFilter;
 use Event::*;
 
@@ -67,7 +67,7 @@ fn test_dial_basic() {
     let addr_1p = addr_1.clone().with(Protocol::P2p(peer_a.into()));
     let addr_2: Multiaddr = "/ip4/2.2.2.2/tcp/3333".parse().unwrap();
     let addr_2p = addr_2.clone().with(Protocol::P2p(peer_a.into()));
-    let error = std::io::Error::new(ErrorKind::Other, "my error");
+    let error = std::io::Error::other("my error");
     book.add_address(&peer_a, addr_1.clone(), AddressSource::Mdns);
     assert_eq!(events.next(), vec!(NewInfo(peer_a)));
     assert_eq!(dials(&mut book), vec!(Dial::A(addr_1p.clone())));
@@ -95,7 +95,7 @@ fn test_dial_basic() {
             NewInfo(peer_a)
         )
     );
-    let error = std::io::Error::new(ErrorKind::Other, "my other error");
+    let error = std::io::Error::other("my other error");
     book.dial_failure(
         IntoAddressHandler(None, false),
         Some(peer_a),
@@ -321,7 +321,7 @@ fn from_docker_host() {
         ]
     );
 
-    let error = std::io::Error::new(ErrorKind::Other, "didn’t work, mate!");
+    let error = std::io::Error::other("didn’t work, mate!");
     book.dial_failure(
         IntoAddressHandler(Some((addr_b_3p.clone(), 3)), false),
         Some(peer_b),
@@ -450,7 +450,7 @@ fn from_docker_container() {
         ]
     );
 
-    let error = std::io::Error::new(ErrorKind::Other, "play it again, Sam");
+    let error = std::io::Error::other("play it again, Sam");
     book.dial_failure(
         IntoAddressHandler(Some((addr_b_3p.clone(), 3)), false),
         Some(peer_b),
@@ -502,7 +502,7 @@ fn from_docker_container() {
         vec![(addr_b_2p.clone(), AddressSource::Dial)]
     );
 
-    let error = std::io::Error::new(ErrorKind::Other, "play it yet another time, Sam");
+    let error = std::io::Error::other("play it yet another time, Sam");
     book.dial_failure(
         IntoAddressHandler(Some((addr_b_2p.clone(), 3)), false),
         Some(peer_b),

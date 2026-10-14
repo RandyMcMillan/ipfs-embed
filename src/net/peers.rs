@@ -38,7 +38,6 @@ use prometheus::{IntCounter, IntGauge, Registry};
 use std::{
     borrow::Cow,
     collections::VecDeque,
-    convert::TryInto,
     io::ErrorKind,
     net::IpAddr,
     pin::Pin,
@@ -171,7 +170,6 @@ fn normalize_connected_point(
 
 trait MultiaddrExt {
     fn is_loopback(&self) -> bool;
-    fn peer_id(&self) -> Option<PeerId>;
 }
 
 impl MultiaddrExt for Multiaddr {
@@ -182,12 +180,6 @@ impl MultiaddrExt for Multiaddr {
             }
         }
         true
-    }
-    fn peer_id(&self) -> Option<PeerId> {
-        match self.iter().last() {
-            Some(Protocol::P2p(p)) => p.try_into().ok(),
-            _ => None,
-        }
     }
 }
 

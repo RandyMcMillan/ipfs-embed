@@ -4,9 +4,9 @@
 //! * `async_global`: Uses the `async-global-executor` crate (with async-std).
 //!   This is the default.
 //! * `tokio`: Uses a user provided tokio >= 1.0 runtime to spawn its background
-//!   tasks.  Note, that
-//! for this to work `ipfs-embed` needs to be executed within the context of a
-//! tokio runtime. ipfs-embed won't spawn any on its own.
+//!   tasks.  Note, that for this to work `ipfs-embed` needs to be executed
+//!   within the context of a tokio runtime. ipfs-embed won't spawn any on its
+//!   own.
 
 use futures::{Future, FutureExt};
 use pin_project::pin_project;
