@@ -31,25 +31,33 @@ fn create_block(links: Vec<Cid>, depth: u64) -> Result<Block<DefaultParams>> {
     Block::encode(DagCborCodec, Code::Blake3_256, &node)
 }
 
-fn build_tree_0(width: u64, depth: u64, blocks: &mut Vec<Block<DefaultParams>>) -> Result<Cid> {
-    let links = if depth == 0 {
-        vec![]
-    } else {
-        let mut links = Vec::with_capacity(width as usize);
-        for _ in 0..width {
-            let cid = build_tree_0(width, depth - 1, blocks)?;
-            links.push(cid);
-        }
-        links
-    };
-    let block = create_block(links, depth)?;
-    let cid = *block.cid();
-    blocks.push(block);
-    Ok(cid)
-}
-
 pub fn build_tree(width: u64, depth: u64) -> Result<(Cid, Vec<Block<DefaultParams>>)> {
-    let mut blocks = vec![];
-    let cid = build_tree_0(width, depth, &mut blocks)?;
-    Ok((cid, blocks))
+    let mut blocks = Vec::new();
+
+    // Iteratively build the tree bottom-up. Keeping this iterative avoids deep
+    // recursion, which previously overflowed the stack for tall chains (width=1).
+    let leaf_count = width.pow(depth as u32) as usize;
+    let mut current = Vec::with_capacity(leaf_count);
+    for _ in 0..leaf_count {
+        let block = create_block(Vec::new(), 0)?;
+        let cid = *block.cid();
+        blocks.push(block);
+        current.push(cid);
+    }
+
+    let mut current_depth = 0u64;
+    while current_depth < depth {
+        let parent_count = current.len() / width as usize;
+        let mut next = Vec::with_capacity(parent_count);
+        for chunk in current.chunks(width as usize) {
+            let block = create_block(chunk.to_vec(), current_depth + 1)?;
+            let cid = *block.cid();
+            blocks.push(block);
+            next.push(cid);
+        }
+        current = next;
+        current_depth += 1;
+    }
+
+    Ok((current[0], blocks))
 }

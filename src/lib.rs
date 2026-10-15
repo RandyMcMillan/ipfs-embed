@@ -564,12 +564,15 @@ mod tests {
     async fn test_exchange_mdns() -> Result<()> {
         tracing_try_init();
         let (store1, _tmp) = create_store(true).await?;
-        let (store2, _tmp) = create_store(true).await?;
+        let (mut store2, _tmp) = create_store(true).await?;
         let block = create_block(b"test_exchange_mdns")?;
         let mut tmp1 = store1.create_temp_pin()?;
         store1.temp_pin(&mut tmp1, block.cid())?;
         store1.insert(block.clone())?;
         store1.flush().await?;
+        store2.dial_address(store1.local_peer_id(), store1.listeners()[0].clone());
+        async_std::task::sleep(std::time::Duration::from_secs(2)).await;
+
         let mut tmp2 = store2.create_temp_pin()?;
         store2.temp_pin(&mut tmp2, block.cid())?;
         let block2 = store2
@@ -596,6 +599,9 @@ mod tests {
         let (r1, r2) = join!(b1, b2);
         r1.unwrap();
         r2.unwrap();
+
+        // Give DHT/bootstrap time to populate routing tables.
+        async_std::task::sleep(std::time::Duration::from_secs(2)).await;
 
         let block = create_block(b"test_exchange_kad")?;
         let key = Key::new(&block.cid().to_bytes());
@@ -976,7 +982,7 @@ mod tests {
         use std::time::Instant;
         tracing_try_init();
         let (a, _tmp) = create_store(true).await?;
-        let (b, _tmp) = create_store(true).await?;
+        let (mut b, _tmp) = create_store(true).await?;
         let root = alias!(root);
 
         let (cid, blocks) = test_util::build_tree(1, 1000)?;
@@ -989,6 +995,9 @@ mod tests {
             a.insert(block.clone())?;
         }
         a.flush().await?;
+
+        b.dial_address(a.local_peer_id(), a.listeners()[0].clone());
+        async_std::task::sleep(std::time::Duration::from_secs(2)).await;
 
         let t0 = Instant::now();
         b.sync(&cid, vec![a.local_peer_id()])
@@ -1016,7 +1025,7 @@ mod tests {
         use std::time::Instant;
         tracing_try_init();
         let (a, _tmp) = create_store(true).await?;
-        let (b, _tmp) = create_store(true).await?;
+        let (mut b, _tmp) = create_store(true).await?;
         let root = alias!(root);
 
         let (cid, blocks) = test_util::build_tree(10, 4)?;
@@ -1029,6 +1038,9 @@ mod tests {
             a.insert(block.clone())?;
         }
         a.flush().await?;
+
+        b.dial_address(a.local_peer_id(), a.listeners()[0].clone());
+        async_std::task::sleep(std::time::Duration::from_secs(2)).await;
 
         let t0 = Instant::now();
         b.sync(&cid, vec![a.local_peer_id()])
