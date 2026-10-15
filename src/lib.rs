@@ -433,6 +433,11 @@ where
 
     /// Flushes the block store. After `flush` completes successfully it is
     /// guaranteed that all writes have been persisted to disk.
+    /// Returns the missing blocks (wantlist) for a root CID.
+    pub fn bitswap_wantlist(&self, cid: &Cid) -> Result<Vec<Cid>> {
+        self.storage.missing_blocks(cid)
+    }
+
     pub fn flush(&self) -> impl Future<Output = Result<()>> {
         self.storage.flush()
     }
