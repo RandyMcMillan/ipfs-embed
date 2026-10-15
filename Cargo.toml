@@ -61,6 +61,8 @@ features = [
     "pnet",
     "tcp",
     "yamux",
+    "relay",
+    "request-response",
 ]
 
 [dev-dependencies]

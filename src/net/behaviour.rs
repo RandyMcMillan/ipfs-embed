@@ -26,6 +26,7 @@ use libp2p::{
         KademliaEvent, PeerRecord, ProgressStep, PutRecordOk, QueryResult, Quorum, K_VALUE,
     },
     mdns, ping,
+    request_response::{ProtocolSupport, RequestResponse, RequestResponseConfig, RequestResponseEvent, RequestResponseMessage},
     swarm::{
         behaviour::toggle::Toggle, AddressRecord, ConnectionError, ConnectionHandler,
         IntoConnectionHandler, NetworkBehaviour,
@@ -799,3 +800,4 @@ impl<P: StoreParams> NetworkBackendBehaviour<P> {
         self.peers.swarm_events(tx)
     }
 }
+
