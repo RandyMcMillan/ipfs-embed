@@ -110,6 +110,7 @@ pub enum NetworkCommand {
     Sync(Cid, Vec<PeerId>, Vec<Cid>, oneshot::Sender<SyncQuery>),
     SwarmEvents(oneshot::Sender<SwarmEvents>),
     CancelQuery(QueryId),
+    SendRequest(PeerId, Vec<u8>, oneshot::Sender<anyhow::Result<Vec<u8>>>),
 }
 
 #[derive(Clone)]
@@ -566,6 +567,18 @@ impl NetworkService {
         async { Ok(rx.await?) }.right_future()
     }
 
+    pub fn send_request(
+        &self,
+        peer: PeerId,
+        request: Vec<u8>,
+    ) -> impl Future<Output = Result<Vec<u8>>> {
+        let (tx, rx) = oneshot::channel();
+        if let Some((_, err)) = self.cmd_shared(NetworkCommand::SendRequest(peer, request, tx)) {
+            return future::ready(Err(anyhow!("{}", err))).left_future();
+        }
+        async { rx.await.map_err(|_| anyhow!("request channel closed"))? }.right_future()
+    }
+
     pub fn swarm_events(&mut self) -> impl Future<Output = Result<SwarmEvents>> {
         let (tx, rx) = oneshot::channel();
         if let Some((_, err)) = self.cmd(NetworkCommand::SwarmEvents(tx)) {
@@ -585,6 +598,7 @@ async fn poll_swarm<P: StoreParams>(
     let mut subscriptions =
         FnvHashMap::<String, Vec<mpsc::UnboundedSender<GossipEvent>>>::default();
     let mut queries = FnvHashMap::<QueryId, QueryChannel>::default();
+    let mut pending_requests = FnvHashMap::<libp2p::request_response::RequestId, oneshot::Sender<anyhow::Result<Vec<u8>>>>::default();
     loop {
         match future::select(
             future::poll_fn(|cx| {
@@ -641,6 +655,38 @@ async fn poll_swarm<P: StoreParams>(
                         }
                         behaviour::NetworkBackendBehaviourEvent::Broadcast(e) => {
                             swarm.inject_broadcast_event(e, &mut subscriptions);
+                        }
+                        behaviour::NetworkBackendBehaviourEvent::RequestResponse(e) => match e {
+                            libp2p::request_response::RequestResponseEvent::Message {
+                                peer: _peer,
+                                message: libp2p::request_response::RequestResponseMessage::Response {
+                                    request_id,
+                                    response,
+                                },
+                            } => {
+                                if let Some(tx) = pending_requests.remove(&request_id) {
+                                    let _ = tx.send(Ok(response));
+                                }
+                            }
+                            libp2p::request_response::RequestResponseEvent::Message {
+                                peer: _peer,
+                                message: libp2p::request_response::RequestResponseMessage::Request {
+                                    request,
+                                    channel,
+                                    ..
+                                },
+                            } => {
+                                swarm.send_response_response(channel, request);
+                            }
+                            libp2p::request_response::RequestResponseEvent::OutboundFailure {
+                                request_id,
+                                ..
+                            } => {
+                                if let Some(tx) = pending_requests.remove(&request_id) {
+                                    let _ = tx.send(Err(anyhow::anyhow!("outbound failure")));
+                                }
+                            }
+                            _ => {}
                         }
                     }
                 }
@@ -790,6 +836,10 @@ async fn poll_swarm<P: StoreParams>(
                 }
                 NetworkCommand::CancelQuery(id) => {
                     swarm.behaviour_mut().cancel(id, &mut queries);
+                }
+                NetworkCommand::SendRequest(peer, request, tx) => {
+                    let req_id = swarm.behaviour_mut().send_request_response(peer, request);
+                    pending_requests.insert(req_id, tx);
                 }
             },
         }

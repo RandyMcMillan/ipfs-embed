@@ -438,6 +438,11 @@ where
         self.storage.missing_blocks(cid)
     }
 
+    /// Sends a request/response request to a peer.
+    pub fn send_request(&self, peer: PeerId, request: Vec<u8>) -> impl Future<Output = Result<Vec<u8>>> {
+        self.network.send_request(peer, request)
+    }
+
     pub fn flush(&self) -> impl Future<Output = Result<()>> {
         self.storage.flush()
     }

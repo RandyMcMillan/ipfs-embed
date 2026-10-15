@@ -109,9 +109,30 @@ pub struct NetworkBackendBehaviour<P: StoreParams> {
     bitswap: Toggle<Bitswap<P>>,
     gossipsub: Toggle<Gossipsub>,
     broadcast: Toggle<Broadcast>,
+    request_response: Toggle<RequestResponse<BytesCodec>>,
 }
 
 impl<P: StoreParams> NetworkBackendBehaviour<P> {
+    pub fn send_request_response(
+        &mut self,
+        peer: PeerId,
+        request: Vec<u8>,
+    ) -> libp2p::request_response::RequestId {
+        self.request_response.as_mut().unwrap().send_request(&peer, request)
+    }
+
+    pub fn send_response_response(
+        &mut self,
+        channel: libp2p::request_response::ResponseChannel<Vec<u8>>,
+        response: Vec<u8>,
+    ) {
+        let _ = self
+            .request_response
+            .as_mut()
+            .unwrap()
+            .send_response(channel, response);
+    }
+
     pub fn inject_mdns_event(&mut self, event: mdns::Event) {
         match event {
             mdns::Event::Discovered(list) => {
@@ -478,6 +499,11 @@ impl<P: StoreParams> NetworkBackendBehaviour<P> {
             None
         };
         let broadcast = config.broadcast.take().map(Broadcast::new);
+        let rr = RequestResponse::new(
+            BytesCodec,
+            std::iter::once((BytesProtocol, ProtocolSupport::Full)),
+            RequestResponseConfig::default(),
+        );
         let bitswap = config
             .bitswap
             .take()
@@ -499,6 +525,7 @@ impl<P: StoreParams> NetworkBackendBehaviour<P> {
             bitswap: bitswap.into(),
             gossipsub: gossipsub.into(),
             broadcast: broadcast.into(),
+            request_response: Some(rr).into(),
         })
     }
 
@@ -801,3 +828,80 @@ impl<P: StoreParams> NetworkBackendBehaviour<P> {
     }
 }
 
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct BytesProtocol;
+
+impl libp2p::request_response::ProtocolName for BytesProtocol {
+    fn protocol_name(&self) -> &[u8] {
+        b"/ipfs-embed/rr/1.0.0"
+    }
+}
+
+#[derive(Clone, Default)]
+pub struct BytesCodec;
+
+#[async_trait::async_trait]
+impl libp2p::request_response::RequestResponseCodec for BytesCodec {
+    type Protocol = BytesProtocol;
+    type Request = Vec<u8>;
+    type Response = Vec<u8>;
+
+    async fn read_request<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+    ) -> std::io::Result<Self::Request>
+    where
+        T: futures::io::AsyncRead + Unpin + Send,
+    {
+        use futures::AsyncReadExt;
+        let mut buf = Vec::new();
+        io.read_to_end(&mut buf).await?;
+        Ok(buf)
+    }
+
+    async fn read_response<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+    ) -> std::io::Result<Self::Response>
+    where
+        T: futures::io::AsyncRead + Unpin + Send,
+    {
+        use futures::AsyncReadExt;
+        let mut buf = Vec::new();
+        io.read_to_end(&mut buf).await?;
+        Ok(buf)
+    }
+
+    async fn write_request<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+        req: Self::Request,
+    ) -> std::io::Result<()>
+    where
+        T: futures::io::AsyncWrite + Unpin + Send,
+    {
+        use futures::AsyncWriteExt;
+        io.write_all(&req).await?;
+        io.close().await?;
+        Ok(())
+    }
+
+    async fn write_response<T>(
+        &mut self,
+        _protocol: &Self::Protocol,
+        io: &mut T,
+        res: Self::Response,
+    ) -> std::io::Result<()>
+    where
+        T: futures::io::AsyncWrite + Unpin + Send,
+    {
+        use futures::AsyncWriteExt;
+        io.write_all(&res).await?;
+        io.close().await?;
+        Ok(())
+    }
+}

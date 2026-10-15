@@ -376,11 +376,11 @@ impl AddressBook {
 
         let debug = format!("{:?}", error);
         let (reason, peer_closed) = match error {
-            Some(ConnHandler(A(A(A(A(A(A(A(e))))))))) => void::unreachable(e),
+            Some(ConnHandler(A(A(A(A(A(A(A(e))))))))) => unreachable!(),
             Some(ConnHandler(A(A(A(A(A(A(B(e))))))))) => {
                 (format!("Kademlia I/O error: {}", e), false)
             }
-            Some(ConnHandler(A(A(A(A(A(B(e)))))))) => void::unreachable(e),
+            Some(ConnHandler(A(A(A(A(A(B(e)))))))) => unreachable!(),
             Some(ConnHandler(A(A(A(A(B(e))))))) => (format!("Ping failure: {}", e), false),
             Some(ConnHandler(A(A(A(B(e)))))) => (format!("Identify I/O error: {}", e), false),
             Some(ConnHandler(A(A(B(e))))) => (format!("Bitswap error: {}", e), false),
