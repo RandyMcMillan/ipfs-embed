@@ -565,6 +565,9 @@ mod tests {
         tracing_try_init();
         let (store1, _tmp) = create_store(true).await?;
         let (mut store2, _tmp) = create_store(true).await?;
+        println!("mdns test peer1={} addr={:?}", store1.local_peer_id(), store1.listeners());
+        println!("mdns test peer2={} addr={:?}", store2.local_peer_id(), store2.listeners());
+        println!("mdns bitswap protocol: /ipfs-embed/bitswap/1.0.0 (compat adds /ipfs/bitswap/1.2.0)");
         let block = create_block(b"test_exchange_mdns")?;
         let mut tmp1 = store1.create_temp_pin()?;
         store1.temp_pin(&mut tmp1, block.cid())?;
@@ -593,6 +596,7 @@ mod tests {
         let addr = store.listeners()[0].clone();
         let peer_id = store.local_peer_id();
         let nodes = [(peer_id, addr)];
+        println!("kad test bootstrap peer={} addr={}", peer_id, store.listeners()[0]);
 
         let b1 = store1.bootstrap(nodes[..].into());
         let b2 = store2.bootstrap(nodes[..].into());
@@ -983,11 +987,15 @@ mod tests {
         tracing_try_init();
         let (a, _tmp) = create_store(true).await?;
         let (mut b, _tmp) = create_store(true).await?;
+        println!("bitswap sync peer a={} addr={:?}", a.local_peer_id(), a.listeners());
+        println!("bitswap sync peer b={} addr={:?}", b.local_peer_id(), b.listeners());
+        println!("bitswap protocol: /ipfs-embed/bitswap/1.0.0 (compat: /ipfs/bitswap/1.2.0)");
         let root = alias!(root);
 
         let (cid, blocks) = test_util::build_tree(1, 1000)?;
         a.alias(root, Some(&cid))?;
         b.alias(root, Some(&cid))?;
+        println!("bitswap sync root={} blocks={}", cid, blocks.len());
 
         let size: usize = blocks.iter().map(|block| block.data().len()).sum();
         tracing::info!("chain built {} blocks, {} bytes", blocks.len(), size);
@@ -1026,11 +1034,15 @@ mod tests {
         tracing_try_init();
         let (a, _tmp) = create_store(true).await?;
         let (mut b, _tmp) = create_store(true).await?;
+        println!("bitswap sync peer a={} addr={:?}", a.local_peer_id(), a.listeners());
+        println!("bitswap sync peer b={} addr={:?}", b.local_peer_id(), b.listeners());
+        println!("bitswap protocol: /ipfs-embed/bitswap/1.0.0 (compat: /ipfs/bitswap/1.2.0)");
         let root = alias!(root);
 
         let (cid, blocks) = test_util::build_tree(10, 4)?;
         a.alias(root, Some(&cid))?;
         b.alias(root, Some(&cid))?;
+        println!("bitswap sync root={} blocks={}", cid, blocks.len());
 
         let size: usize = blocks.iter().map(|block| block.data().len()).sum();
         tracing::info!("chain built {} blocks, {} bytes", blocks.len(), size);
