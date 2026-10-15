@@ -12,6 +12,12 @@
 
 mod db;
 mod executor;
+mod ipns;
+mod path;
+mod pinning;
+mod unixfs;
+
+pub use pinning::PinMode;
 mod net;
 #[cfg(feature = "telemetry")]
 mod telemetry;

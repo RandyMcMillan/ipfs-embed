@@ -19,6 +19,8 @@ async fn main() -> Result<()> {
     let listener = ipfs.listen_on("/ip4/127.0.0.1/tcp/0".parse()?).next().await.unwrap();
     println!("listening on {:?}", listener);
     println!("peer id: {}", ipfs.local_peer_id());
+    println!("node name: {}", ipfs.local_node_name());
+    println!("public key: {:?}", ipfs.local_public_key());
 
     // ---- 2. Insert and read blocks ----
     let block = Block::encode(RawCodec, Code::Blake3_256, b"hello ipfs-embed".as_slice())?;

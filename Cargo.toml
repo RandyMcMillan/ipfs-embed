@@ -31,7 +31,7 @@ futures = "0.3.21"
 futures-timer = "3.0.2"
 ipfs-sqlite-block-store = "0.13.0"
 lazy_static = "1.4.0"
-libipld = { version = "0.14.0", default-features = false }
+libipld = { version = "0.14.0", default-features = false, features = ["dag-pb", "dag-cbor", "derive"] }
 libp2p-bitswap = "0.25.1"
 libp2p-broadcast = "0.12.0"
 names = "0.13.0"
