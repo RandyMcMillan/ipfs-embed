@@ -539,6 +539,12 @@ mod tests {
             .next()
             .await
             .unwrap();
+        tracing::debug!(
+            "create_store peer={} addr={:?} mdns={}",
+            ipfs.local_peer_id(),
+            ipfs.listeners(),
+            enable_mdns
+        );
         Ok((ipfs, tmp))
     }
 
